@@ -1,0 +1,7 @@
+# Local development overrides.
+# Uncomment to use local pack checkout instead of crates.io.
+# [patch.crates-io]
+# packr-guest = { path = "../../pack/crates/pack-guest" }
+# packr-guest-macros = { path = "../../pack/crates/pack-guest-macros" }
+# packr-derive = { path = "../../pack/crates/pack-derive" }
+# packr-abi = { path = "../../pack/crates/pack-abi" }
