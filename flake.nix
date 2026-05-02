@@ -63,10 +63,54 @@
           '';
         });
 
-        # nix run — build and start in theater
+        # nix run — build nix wasm and start in theater
         packages.run = pkgs.writeShellScriptBin "run-actor" ''
           set -e
-          ${theaterBin}/bin/theater start "$(pwd)/manifest.toml"
+          WASM="${self.packages.${system}.default}/hello_actor.wasm"
+          MANIFEST=$(mktemp)
+          cat > "$MANIFEST" <<TOML
+          name = "hello"
+          version = "0.1.0"
+          package = "$WASM"
+
+          [[handler]]
+          type = "runtime"
+          TOML
+          ${theaterBin}/bin/theater start "$MANIFEST" --save .chains
+          rm -f "$MANIFEST"
+        '';
+
+        # nix run .#replay — replay from a chain file
+        # ReplayHandler drives all calls from the recorded chain, so --no-init
+        # prevents the runtime from auto-calling init on top of that.
+        # Builds the WASM via nix and writes a temp manifest so paths resolve
+        # correctly regardless of cwd (works in dev and in CI).
+        packages.replay = pkgs.writeShellScriptBin "replay-actor" ''
+          set -e
+          WASM="${self.packages.${system}.default}/hello_actor.wasm"
+          CHAIN="''${1:-chains/hello-init.chain}"
+          if [ ! -f "$CHAIN" ]; then
+            echo "Chain file not found: $CHAIN" >&2
+            exit 1
+          fi
+          MANIFEST=$(mktemp)
+          cat > "$MANIFEST" <<TOML
+          name = "hello-replay"
+          version = "0.1.0"
+          package = "$WASM"
+
+          [[handler]]
+          type = "runtime"
+
+          [[handler]]
+          type = "store"
+
+          [[handler]]
+          type = "replay"
+          chain = "$(realpath "$CHAIN")"
+          TOML
+          ${theaterBin}/bin/theater start "$MANIFEST" --no-init
+          rm -f "$MANIFEST"
         '';
 
         # nix develop — dev shell
@@ -80,6 +124,7 @@
             echo "hello-actor dev environment"
             echo "  nix build          Build the WASM (isolated)"
             echo "  nix run .#run      Build + start in theater"
+            echo "  nix run .#replay   Replay from chains/hello-init.chain"
             echo "  cargo build ...    Build locally (fast)"
             echo "  theater start ...  Run with local theater"
           '';

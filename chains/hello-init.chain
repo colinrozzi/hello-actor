@@ -1,0 +1,16 @@
+---
+hash: 7df1d45f275f4b950dbbe0f58be5c101fae07ec2
+parent: root
+chain-event-payload::wasm(wasm-event-data::wasm-call(wasm-call{function-name: "theater:simple/actor.init", params: ()}))
+---
+hash: 4c40e6eac10bf541659db651c382d90840e723b3
+parent: 7df1d45f275f4b950dbbe0f58be5c101fae07ec2
+chain-event-payload::host-function(host-function-call{interface: "theater:simple/runtime", function: "log", input: "[hello] init", output: ()})
+---
+hash: e1ae632d18455f988874badd6dbd615e3be05027
+parent: 4c40e6eac10bf541659db651c382d90840e723b3
+chain-event-payload::host-function(host-function-call{interface: "theater:simple/runtime", function: "shutdown", input: none<s32>, output: ok<string, string>(())})
+---
+hash: 57bcb1d8760240a70d4d13d4abf7ce6f5a9b7b68
+parent: e1ae632d18455f988874badd6dbd615e3be05027
+chain-event-payload::wasm(wasm-event-data::wasm-result(wasm-result{function-name: "theater:simple/actor.init", state: ActorState{greeting: "Hello", count: 0u32}, response: ()}))

@@ -1,0 +1,13 @@
+name = "hello-replay"
+version = "0.1.0"
+package = "../target/wasm32-unknown-unknown/release/hello_actor.wasm"
+
+[[handler]]
+type = "runtime"
+
+[[handler]]
+type = "store"
+
+[[handler]]
+type = "replay"
+chain = "chains/hello-init.chain"

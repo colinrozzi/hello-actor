@@ -1,6 +1,6 @@
 name = "hello"
 version = "0.1.0"
-package = "/home/colin/work/actors/hello/target/wasm32-unknown-unknown/release/hello_actor.wasm"
+package = "target/wasm32-unknown-unknown/release/hello_actor.wasm"
 
 [[handler]]
 type = "runtime"

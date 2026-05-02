@@ -3,6 +3,7 @@ extern crate alloc;
 
 use alloc::format;
 use alloc::string::String;
+use alloc::vec::Vec;
 use packr_guest::{export, import, pack_types, GraphValue, Value};
 
 packr_guest::setup_guest!();
@@ -18,6 +19,7 @@ pack_types! {
     imports {
         theater:simple/runtime {
             log: func(msg: string),
+            shutdown: func(data: option<list<u8>>) -> result<_, string>,
         }
     }
     exports {
@@ -29,13 +31,22 @@ pack_types! {
 #[import(module = "theater:simple/runtime", name = "log")]
 fn log(msg: String);
 
+#[import(module = "theater:simple/runtime", name = "shutdown")]
+fn shutdown(data: Option<Vec<u8>>) -> Result<(), String>;
+
 #[export(name = "theater:simple/actor.init")]
 fn init(_state: Value) -> Result<(ActorState, ()), String> {
     log(String::from("[hello] init"));
-    Ok((ActorState {
-        greeting: String::from("Hello"),
-        count: 0,
-    }, ()))
+
+    let _ = shutdown(None);
+
+    Ok((
+        ActorState {
+            greeting: String::from("Hello"),
+            count: 0,
+        },
+        (),
+    ))
 }
 
 #[export(name = "theater:hello/actions.greet")]

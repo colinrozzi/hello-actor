@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build WASM
+        run: nix build .#default
+
+      - name: Format check
+        run: nix develop --command cargo fmt -- --check
+
+      - name: Clippy
+        run: nix develop --command cargo clippy --target wasm32-unknown-unknown -- -D warnings
+
+  replay:
+    name: Replay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: DeterminateSystems/nix-installer-action@main
+
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+
+      # Replays the committed chain at chains/hello-init.chain against the
+      # nix-built WASM. The replay handler verifies every event hash matches.
+      # Any divergence (e.g. behavior change, packr/theater regression) fails CI.
+      - name: Replay recorded chain
+        run: nix run .#replay 2>&1 | tee replay.log
+
+      - name: Verify all events were verified
+        run: grep -q "Replay complete:" replay.log && grep -q "events verified" replay.log
