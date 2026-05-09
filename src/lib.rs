@@ -1,4 +1,7 @@
 #![no_std]
+// `#[import]` and `#[export]` macros from packr-guest expand to code with
+// `unused_unit` patterns that newer clippy flags. Suppress at crate level.
+#![allow(clippy::unused_unit)]
 extern crate alloc;
 
 use alloc::format;
