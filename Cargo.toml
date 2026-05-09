@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-packr-guest = { version = "0.5.1", features = ["derive"] }
+packr-guest = { version = "0.5.4", features = ["derive"] }
 
 [profile.release]
 opt-level = "s"
