@@ -63,6 +63,19 @@
           '';
         });
 
+        # nix build .#clippy — fails on any clippy warning
+        packages.clippy = craneLib.cargoClippy (commonArgs // {
+          inherit cargoArtifacts;
+          cargoClippyExtraArgs = "--target wasm32-unknown-unknown -- -D warnings";
+        });
+
+        # nix build .#fmt — fails on any rustfmt diff
+        packages.fmt = craneLib.cargoFmt {
+          inherit src;
+          pname = "hello-actor";
+          version = "0.1.0";
+        };
+
         # nix run — build nix wasm and start in theater
         packages.run = pkgs.writeShellScriptBin "run-actor" ''
           set -e
@@ -80,11 +93,14 @@
           rm -f "$MANIFEST"
         '';
 
-        # nix run .#replay — replay from a chain file
+        # nix run .#replay — replay from a chain file.
         # ReplayHandler drives all calls from the recorded chain, so --no-init
         # prevents the runtime from auto-calling init on top of that.
-        # Builds the WASM via nix and writes a temp manifest so paths resolve
-        # correctly regardless of cwd (works in dev and in CI).
+        # Wraps in a timeout: with --no-init theater stays idle after replay
+        # verification completes (the actor's shutdown was stubbed by the
+        # replay interceptor, so the runtime never gets the real shutdown
+        # signal). Replay should finish in seconds; the outer CI step asserts
+        # "Replay complete" appears in the log.
         packages.replay = pkgs.writeShellScriptBin "replay-actor" ''
           set -e
           WASM="${self.packages.${system}.default}/hello_actor.wasm"
@@ -94,6 +110,7 @@
             exit 1
           fi
           MANIFEST=$(mktemp)
+          trap 'rm -f "$MANIFEST"' EXIT
           cat > "$MANIFEST" <<TOML
           name = "hello-replay"
           version = "0.1.0"
@@ -109,8 +126,11 @@
           type = "replay"
           chain = "$(realpath "$CHAIN")"
           TOML
-          ${theaterBin}/bin/theater start "$MANIFEST" --no-init
-          rm -f "$MANIFEST"
+          # `timeout` exits 124 when it kills the process — that's the expected
+          # path here because theater doesn't self-terminate after replay. The
+          # log has already captured the verification result by then.
+          ${pkgs.coreutils}/bin/timeout --signal=KILL --preserve-status 30 \
+            ${theaterBin}/bin/theater -l info start "$MANIFEST" --no-init || true
         '';
 
         # nix develop — dev shell
