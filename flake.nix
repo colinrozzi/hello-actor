@@ -11,7 +11,7 @@
     crane.url = "github:ipetkov/crane";
 
     theater = {
-      url = "github:colinrozzi/theater/v0.3.9";
+      url = "github:colinrozzi/theater/release-20260509";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.rust-overlay.follows = "rust-overlay";
       inputs.crane.follows = "crane";
